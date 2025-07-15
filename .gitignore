@@ -73,3 +73,13 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Ignore React Native node modules
+node_modules/
+
+# Ignore backend node modules
+/backend/node_modules/
+
+# Ignore environment variables
+.env
+/backend/.env
