@@ -287,7 +287,6 @@ const ChatMessagesScreen = () => {
         })}
       </ScrollView>
 
-      {/* Input section */}
       <View style={styles.inputRow}>
         <Entypo
           onPress={() => setIsEmojiPickerOpen(true)}

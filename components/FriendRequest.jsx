@@ -6,7 +6,7 @@ import {API_URL} from '@env'
 
 const FriendRequest = ({ item, friendRequests, setFriendRequests }) => {
   const { userId } = useContext(UserType);
-  const navigation = useNavigation();
+  
   const [loading, setLoading] = useState(false);
 
   const acceptRequest = async (friendRequestId) => {
