@@ -26,7 +26,6 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { API_URL } from '@env';
 import io from 'socket.io-client';
 
-
 const ChatMessagesScreen = () => {
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [selectedMessages, setSelectedMessages] = useState([]);
@@ -40,6 +39,8 @@ const ChatMessagesScreen = () => {
   const { userId } = useContext(UserType);
   const scrollViewRef = useRef(null);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+
   const socket = useRef(null);
   useEffect(() => {
     fetchMessages();
@@ -49,13 +50,16 @@ const ChatMessagesScreen = () => {
     socket.current.emit('join', userId);
 
     socket.current.on('receiveMessage', data => {
-      setMessages(prev => [...prev, data]);
+      if (data?.senderId === recepientId && data?.message) {
+        setMessages(prev => [...prev, data]);
+        scrollToBottom();
+      }
     });
 
     return () => {
       socket.current.disconnect();
     };
-  }, []);
+  }, [recepientId, userId]);
 
   useEffect(() => {
     setTimeout(() => scrollToBottom(), 100);
@@ -96,79 +100,54 @@ const ChatMessagesScreen = () => {
     }
   };
 
-  // const handleSend = async (messageType, imageUri) => {
-  //   try {
-  //     const formData = new FormData();
-  //     formData.append('senderId', userId);
-  //     formData.append('recepientId', recepientId);
-
-  //     if (messageType === 'image') {
-  //       formData.append('messageType', 'image');
-  //       formData.append('imageFile', {
-  //         uri: imageUri,
-  //         name: 'image.jpg',
-  //         type: 'image/jpeg',
-  //       });
-  //     } else {
-  //       formData.append('messageType', 'text');
-  //       formData.append('messageText', message);
-  //     }
-
-  //     const response = await fetch(`${API_URL}/messages`, {
-  //       method: 'POST',
-  //       body: formData,
-  //     });
-
-  //     if (response.ok) {
-  //       setMessage('');
-  //       setSelectedImage('');
-  //       fetchMessages();
-  //     }
-  //   } catch (error) {
-  //     console.log('Send message error', error);
-  //   }
-  // };
-
   const handleSend = async (messageType, imageUri) => {
-  try {
-    const formData = new FormData();
-    formData.append("senderId", userId);
-    formData.append("recepientId", recepientId);
+    if (sending) return;
+    setSending(true);
 
-    if (messageType === "image") {
-      formData.append("messageType", "image");
-      formData.append("imageFile", {
-        uri: imageUri,
-        name: "image.jpg",
-        type: "image/jpeg",
+    try {
+      const formData = new FormData();
+      formData.append('senderId', userId);
+      formData.append('recepientId', recepientId);
+
+      if (messageType === 'image') {
+        formData.append('messageType', 'image');
+        formData.append('imageFile', {
+          uri: imageUri,
+          name: 'image.jpg',
+          type: 'image/jpeg',
+        });
+      } else {
+        if (!message.trim()) {
+          setSending(false); // nothing to send
+          return;
+        }
+        formData.append('messageType', 'text');
+        formData.append('messageText', message.trim());
+      }
+
+      const response = await fetch(`${API_URL}/messages`, {
+        method: 'POST',
+        body: formData,
       });
-    } else {
-      formData.append("messageType", "text");
-      formData.append("messageText", message);
+
+      if (response.ok) {
+        const newMsg = await response.json();
+        socket.current.emit('sendMessage', {
+          senderId: userId,
+          receiverId: recepientId,
+          message: newMsg,
+        });
+
+        setMessages(prev => [...prev, newMsg]);
+        setMessage('');
+        setSelectedImage('');
+      }
+    } catch (error) {
+      console.log('Send message error', error);
+    } finally {
+      setSending(false);
     }
-
-    const response = await fetch(`${API_URL}/messages`, {
-      method: "POST",
-      body: formData,
-    });
-
-    if (response.ok) {
-      const newMsg = await response.json(); 
-      socket.current.emit("sendMessage", {
-        senderId: userId,
-        receiverId: recepientId,
-        message: newMsg,
-      });
-
-      setMessages((prev) => [...prev, newMsg]);
-      setMessage("");
-      setSelectedImage("");
-    }
-  } catch (error) {
-    console.log("Send message error", error);
-  }
-};
-
+  };
 
   const deleteMessages = async messageIds => {
     try {
@@ -320,11 +299,18 @@ const ChatMessagesScreen = () => {
           value={message}
           onChangeText={setMessage}
           placeholder="Type your message..."
+          placeholderTextColor={'black'}
           style={styles.chatInput}
         />
         <Entypo onPress={pickImage} name="camera" size={24} color="gray" />
-        <Pressable onPress={() => handleSend('text')} style={styles.sendButton}>
-          <Text style={styles.sendButtonText}>Send</Text>
+        <Pressable
+          onPress={() => handleSend('text')}
+          style={[styles.sendButton, sending && { opacity: 0.5 }]}
+          disabled={sending}
+        >
+          <Text style={styles.sendButtonText}>
+            {sending ? 'Sending..' : 'Send'}
+          </Text>
         </Pressable>
       </View>
 
@@ -445,5 +431,6 @@ const styles = StyleSheet.create({
   sendButtonText: {
     color: 'white',
     fontWeight: 'bold',
+    width:100
   },
 });

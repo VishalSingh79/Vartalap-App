@@ -39,7 +39,7 @@ mongoose
 
 const io = new Server(server, {
   cors: {
-    origin: "*", // adjust this in production
+    origin: "*", 
     methods: ["GET", "POST"],
   },
 });
@@ -65,7 +65,7 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(port, () => {
+server.listen(port, '0.0.0.0', () => {
   console.log(`Server running with Socket.IO on port ${port}`);
 });
 

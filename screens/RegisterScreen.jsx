@@ -236,6 +236,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     marginVertical: 10,
     width: 300,
+    color: 'black',
   },
   imageButton: {
     width: 200,
