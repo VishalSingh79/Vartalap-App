@@ -9,7 +9,7 @@
 - 👥 **User List**: View all users who use the app.
 - ➕ **Friend Requests**:
   - Send and receive friend requests.
-  - Accept or reject incoming requests.
+  - Accept incoming requests.
   - Chat is only enabled after both users are friends.
 - 💬 **Real-Time Chat**:
   - Text messages using **Socket.IO**.
@@ -18,7 +18,6 @@
 - ✍️ **Typing Indicator**: Shows when the other user is typing.
 - ✅ **Message Status**:
   - Sent
-  - Delivered
   - Seen
 - 🗑️ **Message Management**:
   - Long press to select and delete messages (text or image).
