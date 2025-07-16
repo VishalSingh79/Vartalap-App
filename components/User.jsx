@@ -9,6 +9,7 @@ import {
 import React, { useContext, useState, useEffect } from 'react';
 import { UserType } from '../useContext';
 import { API_URL } from '@env';
+import { useNavigation } from '@react-navigation/native';
 
 const User = ({ item }) => {
   const { userId } = useContext(UserType);
@@ -18,7 +19,7 @@ const User = ({ item }) => {
   const [userFriends, setUserFriends] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-
+  const navigation = useNavigation();
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -82,7 +83,13 @@ const User = ({ item }) => {
   return (
     <Pressable
       style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}
-      
+      onPress={() => {
+        if (isFriend) {
+          navigation.navigate('Messages', { recepientId: item._id });
+        } else if (isRequestReceived) {
+          navigation.replace('Friends');
+        }
+      }}
     >
       <View>
         <Image
@@ -102,14 +109,7 @@ const User = ({ item }) => {
       </View>
 
       {isFriend ? (
-        <Pressable
-          onPress={() =>
-            navigation.navigate('Messages', {
-              recepientId: item._id,
-            })
-          }
-          style={styles.friendsBtn}
-        >
+        <Pressable style={styles.friendsBtn}>
           <Text style={styles.btnText}>Friends</Text>
         </Pressable>
       ) : isRequestReceived ? (

@@ -42,6 +42,31 @@ const io = new Server(server, {
   },
 });
 
+// io.on('connection', socket => {
+//   console.log('A user connected:', socket.id);
+
+//   socket.on('join', userId => {
+//     socket.join(userId);
+//   });
+
+//   socket.on('sendMessage', async ({ senderId, receiverId, message }) => {
+//     try {
+//       const populatedMessage = await Message.findById(message._id).populate(
+//         'senderId',
+//         '_id name',
+//       );
+
+//       io.to(receiverId).emit('receiveMessage', populatedMessage);
+//       io.to(senderId).emit('receiveMessage', populatedMessage); // This is key for sender's updates
+//     } catch (error) {
+//       console.log('Error in sendMessage socket handler:', error);
+//     }
+//   });
+
+//   socket.on('disconnect', () => {
+//     console.log('User disconnected:', socket.id);
+//   });
+// });
 io.on('connection', socket => {
   console.log('A user connected:', socket.id);
 
@@ -56,10 +81,34 @@ io.on('connection', socket => {
         '_id name',
       );
 
+      // Emit the message to both sender and receiver
       io.to(receiverId).emit('receiveMessage', populatedMessage);
-      io.to(senderId).emit('receiveMessage', populatedMessage); // This is key for sender's updates
+      io.to(senderId).emit('receiveMessage', populatedMessage);
     } catch (error) {
       console.log('Error in sendMessage socket handler:', error);
+    }
+  });
+
+  
+  socket.on('typing', ({ senderId, receiverId }) => {
+    io.to(receiverId).emit('typing', { senderId });
+  });
+
+ 
+  socket.on('stopTyping', ({ senderId, receiverId }) => {
+    io.to(receiverId).emit('stopTyping', { senderId });
+  });
+
+ 
+  socket.on('messageSeen', async ({ messageId, senderId, receiverId }) => {
+    try {
+      
+      await Message.findByIdAndUpdate(messageId, { isRead: true });
+
+      
+      io.to(senderId).emit('messageRead', { messageId, readerId: receiverId });
+    } catch (error) {
+      console.log('Error in messageSeen socket handler:', error);
     }
   });
 
