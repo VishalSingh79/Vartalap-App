@@ -1,8 +1,61 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# 🗨️ Vartalap App
+
+**Vartalap App** is a real-time messaging mobile application built with **React Native**, **Node.js**, **Express**, and **MongoDB**. It allows users to connect with each other by sending friend requests, accepting or rejecting them, and having one-on-one real-time chats with support for media sharing and message status tracking.
+
+---
+
+## 🚀 Main Features
+
+- 👥 **User List**: View all users who use the app.
+- ➕ **Friend Requests**:
+  - Send and receive friend requests.
+  - Accept or reject incoming requests.
+  - Chat is only enabled after both users are friends.
+- 💬 **Real-Time Chat**:
+  - Text messages using **Socket.IO**.
+  - Image sharing from device gallery.
+  - Emoji support.
+- ✍️ **Typing Indicator**: Shows when the other user is typing.
+- ✅ **Message Status**:
+  - Sent
+  - Delivered
+  - Seen
+- 🗑️ **Message Management**:
+  - Long press to select and delete messages (text or image).
+- 🖼️ **Image Viewer**:
+  - Tap on images to view them in full screen (WhatsApp-style modal viewer).
+
+---
+
+## 🧰 Tech Stack
+
+### 📱 Frontend – React Native
+- React Native CLI
+- React Navigation
+- Context API
+- Socket.IO Client
+- Cloudinary (for media upload)
+- Emoji Picker
+- React Native Image Picker
+- AsyncStorage
+
+### 🌐 Backend – Node.js + Express
+- Express.js
+- MongoDB + Mongoose
+- Socket.IO Server
+- Cloudinary SDK
+- REST APIs for messages, users, and friend requests
+
+---
+
+## 📦 Project Structure
+
+
+
 
 # Getting Started
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+> **Note**: To Run the Project follow below steps.
 
 ## Step 1: Start Metro
 
