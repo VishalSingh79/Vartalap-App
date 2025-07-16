@@ -1,4 +1,5 @@
-# 🗨️ Vartalap App(./preview.jpg)
+# 🗨️ Vartalap App
+![Vartalap Preview](./preview.jpg)
 
 **Vartalap App** is a real-time messaging mobile application built with **React Native**, **Node.js**, **Express**, and **MongoDB**. It allows users to connect with each other by sending friend requests, accepting or rejecting them, and having one-on-one real-time chats with support for media sharing and message status tracking.
 
