@@ -8,6 +8,8 @@ import {
   Pressable,
   Image,
   ActivityIndicator,
+  Platform, 
+  Keyboard, 
 } from 'react-native';
 import React, {
   useState,
@@ -41,8 +43,9 @@ const ChatMessagesScreen = () => {
   const scrollViewRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [isTyping, setIsTyping] = useState(false); 
-  const typingTimeoutRef = useRef(null); 
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef(null);
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false); 
 
   const socket = useRef(null);
 
@@ -62,7 +65,6 @@ const ChatMessagesScreen = () => {
 
       if (isMessageFromCurrentRecipient || isMessageToCurrentRecipient) {
         setMessages(prev => {
-          // Check if message already exists to prevent duplicates
           if (!prev.some(msg => msg._id === data._id)) {
             return [...prev, data];
           }
@@ -94,8 +96,36 @@ const ChatMessagesScreen = () => {
       }
     });
 
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+       
+        if (!message.trim()) { 
+             socket.current.emit('typing', {
+                senderId: userId,
+                receiverId: recepientId,
+             });
+        }
+      },
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+       
+        socket.current.emit('stopTyping', {
+          senderId: userId,
+          receiverId: recepientId,
+        });
+        clearTimeout(typingTimeoutRef.current);
+      },
+    );
+
     return () => {
       socket.current.disconnect();
+      keyboardDidShowListener.remove(); 
+      keyboardDidHideListener.remove(); 
     };
   }, [recepientId, userId]);
 
@@ -186,11 +216,13 @@ const ChatMessagesScreen = () => {
     } finally {
       setSending(false);
 
-      socket.current.emit('stopTyping', {
-        senderId: userId,
-        receiverId: recepientId,
-      });
-      clearTimeout(typingTimeoutRef.current);
+      if (!isKeyboardVisible || message.trim() === '') {
+        socket.current.emit('stopTyping', {
+          senderId: userId,
+          receiverId: recepientId,
+        });
+        clearTimeout(typingTimeoutRef.current);
+      }
     }
   };
 
@@ -234,18 +266,19 @@ const ChatMessagesScreen = () => {
     }
   };
 
-  // New: Handle text input change for typing indicator
+
   const handleTextInputChange = useCallback(
     text => {
       setMessage(text);
       if (!socket.current) return;
 
       if (text.length > 0) {
+      
         socket.current.emit('typing', {
           senderId: userId,
           receiverId: recepientId,
         });
-        // Clear any previous timeout
+      
         if (typingTimeoutRef.current) {
           clearTimeout(typingTimeoutRef.current);
         }
@@ -257,6 +290,7 @@ const ChatMessagesScreen = () => {
           });
         }, 3000);
       } else {
+       
         socket.current.emit('stopTyping', {
           senderId: userId,
           receiverId: recepientId,
@@ -267,7 +301,6 @@ const ChatMessagesScreen = () => {
     [userId, recepientId],
   );
 
-  // New: Function to mark messages as seen
   const markMessagesAsSeen = useCallback(
     async msgs => {
       if (!socket.current) return;
@@ -282,7 +315,6 @@ const ChatMessagesScreen = () => {
           senderId: msg.senderId._id,
           receiverId: userId,
         });
-        // Optimistically update frontend
         setMessages(prevMessages =>
           prevMessages.map(m =>
             m._id === msg._id ? { ...m, isRead: true } : m,
@@ -364,10 +396,14 @@ const ChatMessagesScreen = () => {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#F0F0F0' }}>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: '#F0F0F0' }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0} 
+    >
       <ScrollView
         ref={scrollViewRef}
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 10 }}
         onContentSizeChange={scrollToBottom}
         onScrollBeginDrag={() => {
           markMessagesAsSeen(messages);
@@ -378,75 +414,81 @@ const ChatMessagesScreen = () => {
           const isSelected = selectedMessages.includes(item._id);
           const bubbleStyle = [
             isSender ? styles.senderBubble : styles.receiverBubble,
-            isSelected && styles.selectedBubble,
           ];
 
           return (
             <Pressable
               key={item._id || index}
               onPress={() => {
-                if (selectedMessages.length > 0) handleSelectMessage(item);
+               
+                if (selectedMessages.length > 0) {
+                  handleSelectMessage(item);
+                }
+               
+                else if (item.messageType === 'image') {
+                    navigation.navigate('MediaPreview', {
+                        uri: item?.imageUrl,
+                    });
+                }
               }}
-              onLongPress={() => handleSelectMessage(item)}
+              onLongPress={() => handleSelectMessage(item)} 
               style={bubbleStyle}
             >
               {item.messageType === 'text' ? (
-                <>
+                <View style={styles.messageContentWrapper}>
                   <Text style={styles.messageText}>{item?.message}</Text>
                   <View style={styles.messageMeta}>
                     <Text style={styles.timeText}>
                       {formatTime(item.timeStamp)}
                     </Text>
-                    {isSender && item.isRead ? (
-                      <Ionicons
-                        name="checkmark-done"
-                        size={15}
-                        color="#4A55A2"
-                        style={{ marginLeft: 5 }}
-                      />
-                    ) : (
-                      <Ionicons
-                        name="checkmark"
-                        size={15}
-                        color="grey"
-                        style={{ marginLeft: 5 }}
-                      />
+                    {isSender && (
+                      item.isRead ? (
+                        <Ionicons
+                          name="checkmark-done"
+                          size={15}
+                          color="#4A55A2"
+                          style={{ marginLeft: 5 }}
+                        />
+                      ) : (
+                        <Ionicons
+                          name="checkmark"
+                          size={15}
+                          color="grey"
+                          style={{ marginLeft: 5 }}
+                        />
+                      )
                     )}
                   </View>
-                </>
+                </View>
               ) : (
-                <Pressable
-                  onPress={() =>
-                    navigation.navigate('MediaPreview', {
-                      uri: item?.imageUrl,
-                    })
-                  }
-                >
-                  <Image
-                    source={{ uri: item.imageUrl }}
-                    style={styles.imageMessage}
-                  />
+                <View style={styles.imageMessageContainer}>
+                  <Image source={{ uri: item.imageUrl }} style={styles.imageMessage} />
                   <View style={styles.timeOverlayContainer}>
                     <Text style={styles.timeOverlay}>
                       {formatTime(item?.timeStamp)}
                     </Text>
-                    {isSender && item.isRead ? (
-                      <Ionicons
-                        name="checkmark-done"
-                        size={15}
-                        color="#4A55A2"
-                        style={{ marginLeft: 5 }}
-                      />
-                    ) : (
-                      <Ionicons
-                        name="checkmark"
-                        size={15}
-                        color="grey"
-                        style={{ marginLeft: 5 }}
-                      />
+                    {isSender && (
+                      item.isRead ? (
+                        <Ionicons
+                          name="checkmark-done"
+                          size={15}
+                          color="white"
+                          style={styles.checkmarkIcon}
+                        />
+                      ) : (
+                        <Ionicons
+                          name="checkmark"
+                          size={15}
+                          color="lightgray"
+                          style={styles.checkmarkIcon}
+                        />
+                      )
                     )}
                   </View>
-                </Pressable>
+                </View>
+              )}
+              {isSelected && (
+                <View style={styles.selectionOverlay} />
               )}
             </Pressable>
           );
@@ -466,6 +508,25 @@ const ChatMessagesScreen = () => {
           placeholder="Type your message..."
           placeholderTextColor={'black'}
           style={styles.chatInput}
+
+          onFocus={() => {
+            if (!message.trim() && !isKeyboardVisible) { 
+                socket.current.emit('typing', {
+                    senderId: userId,
+                    receiverId: recepientId,
+                });
+            }
+          }}
+
+          onBlur={() => {
+            if (Platform.OS !== 'ios' && !isKeyboardVisible) {
+                socket.current.emit('stopTyping', {
+                    senderId: userId,
+                    receiverId: recepientId,
+                });
+                clearTimeout(typingTimeoutRef.current);
+            }
+          }}
         />
         <Entypo onPress={pickImage} name="camera" size={24} color="gray" />
         <Pressable
@@ -538,39 +599,45 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     backgroundColor: '#DCF8C6',
     padding: 8,
-    maxWidth: '60%',
+    maxWidth: '65%',
     borderRadius: 7,
     margin: 10,
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    position: 'relative',
   },
   receiverBubble: {
     alignSelf: 'flex-start',
     backgroundColor: 'white',
     padding: 8,
-    maxWidth: '60%',
+    maxWidth: '65%',
     borderRadius: 7,
     margin: 10,
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    position: 'relative',
   },
-  selectedBubble: {
-    width: '100%',
-    backgroundColor: '#47e771dc',
+  messageContentWrapper: {
+    flexDirection: 'column',
+    flexGrow: 1,
+    flexShrink: 1,
+    overflow: 'hidden',
   },
   messageText: {
     fontSize: 13,
+    flexShrink: 1,
+  },
+  messageMeta: {
+    flexDirection: 'row',
+    alignSelf: 'flex-end',
+    alignItems: 'center',
+    marginTop: 5,
+    marginLeft: 'auto',
   },
   timeText: {
     fontSize: 9,
     color: 'gray',
-    marginTop: 5,
-    marginLeft: 'auto',
   },
-  messageMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 10,
+  imageMessageContainer: {
+    position: 'relative',
   },
   imageMessage: {
     width: 200,
@@ -579,14 +646,29 @@ const styles = StyleSheet.create({
   },
   timeOverlayContainer: {
     position: 'absolute',
-    right: 10,
-    bottom: 7,
+    right: 5,
+    bottom: 5,
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: 5,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
   },
   timeOverlay: {
     color: 'white',
     fontSize: 9,
+  },
+  checkmarkIcon: {
+    marginLeft: 3,
+    textShadowColor: 'black',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 2,
+  },
+  selectionOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(71, 231, 113, 0.5)',
+    borderRadius: 7,
   },
   inputRow: {
     flexDirection: 'row',

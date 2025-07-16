@@ -91,7 +91,13 @@ const User = ({ item }) => {
         }
       }}
     >
-      <View>
+      <Pressable
+        onPress={() =>
+          navigation.navigate('MediaPreview', {
+            uri: item.image,
+          })
+        }
+      >
         <Image
           style={{
             width: 50,
@@ -101,7 +107,7 @@ const User = ({ item }) => {
           }}
           source={{ uri: item.image }}
         />
-      </View>
+      </Pressable>
 
       <View style={{ marginLeft: 12, flex: 1 }}>
         <Text style={{ fontWeight: 'bold' }}>{item?.name}</Text>
