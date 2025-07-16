@@ -339,8 +339,14 @@ const ChatMessagesScreen = () => {
           <Ionicons
             onPress={
               selectedMessages.length > 0
-                ? () => setSelectedMessages([])
-                : () => navigation.goBack()
+                ? () => {
+                  setIsTyping(false);
+                  setSelectedMessages([]);
+                }
+                : () =>{
+                   setIsTyping(false);
+                   navigation.goBack();
+                }
             }
             name="arrow-back-outline"
             size={24}
@@ -599,6 +605,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     backgroundColor: '#DCF8C6',
     padding: 8,
+    width:'fit-content',
     maxWidth: '65%',
     borderRadius: 7,
     margin: 10,
@@ -609,6 +616,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     backgroundColor: 'white',
     padding: 8,
+    width:'fit-content',
     maxWidth: '65%',
     borderRadius: 7,
     margin: 10,
