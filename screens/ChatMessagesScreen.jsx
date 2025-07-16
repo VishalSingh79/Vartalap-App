@@ -43,23 +43,34 @@ const ChatMessagesScreen = () => {
 
   const socket = useRef(null);
   useEffect(() => {
-    fetchMessages();
-    fetchRecepientData();
+    fetchMessages(); // Initial fetch of messages
+    fetchRecepientData(); // Fetch recipient details
+
     socket.current = io(API_URL);
 
-    socket.current.emit('join', userId);
+    socket.current.emit('join', userId); // Join a room for the current user // Listen for incoming messages
 
     socket.current.on('receiveMessage', data => {
-      if (data?.senderId === recepientId && data?.message) {
-        setMessages(prev => [...prev, data]);
-        scrollToBottom();
+      
+      const isMessageFromCurrentRecipient =
+        data?.senderId?._id === recepientId && data?.recepientId === userId;
+      const isMessageToCurrentRecipient =
+        data?.senderId?._id === userId && data?.recepientId === recepientId;
+
+      if (isMessageFromCurrentRecipient || isMessageToCurrentRecipient) {
+       
+        if (!messages.some(msg => msg._id === data._id)) {
+          
+          setMessages(prev => [...prev, data]);
+          scrollToBottom();
+        }
       }
     });
 
     return () => {
       socket.current.disconnect();
     };
-  }, [recepientId, userId]);
+  }, [recepientId, userId]); 
 
   useEffect(() => {
     setTimeout(() => scrollToBottom(), 100);
@@ -410,7 +421,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderTopWidth: 1,
     borderTopColor: '#dddddd',
-    marginBottom: 25,
+    marginBottom: 15,
     gap: 10,
   },
   chatInput: {
@@ -430,6 +441,7 @@ const styles = StyleSheet.create({
   sendButtonText: {
     color: 'white',
     fontWeight: 'bold',
-    width:100
+    width: 70,
+    textAlign: 'center',
   },
 });

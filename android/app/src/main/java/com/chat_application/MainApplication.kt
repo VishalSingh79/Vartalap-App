@@ -1,4 +1,4 @@
-package com.Vartalap-App
+package com.vartalap_app
 
 import android.app.Application
 import com.facebook.react.PackageList
