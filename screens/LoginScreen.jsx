@@ -19,7 +19,7 @@ const LoginScreen = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false); 
   const navigation = useNavigation();
-  console.log("API-> ",API_URL);
+ 
   
   useEffect(() => {
     
