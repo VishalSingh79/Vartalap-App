@@ -405,7 +405,7 @@ const ChatMessagesScreen = () => {
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: '#F0F0F0' }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0} 
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0} 
     >
       <ScrollView
         ref={scrollViewRef}
@@ -605,7 +605,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     backgroundColor: '#DCF8C6',
     padding: 8,
-    width:'fit-content',
     maxWidth: '65%',
     borderRadius: 7,
     margin: 10,
@@ -616,7 +615,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     backgroundColor: 'white',
     padding: 8,
-    width:'fit-content',
     maxWidth: '65%',
     borderRadius: 7,
     margin: 10,
@@ -685,7 +683,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderTopWidth: 1,
     borderTopColor: '#dddddd',
-    marginBottom: 9,
+    marginBottom: 35,
     gap: 10,
   },
   chatInput: {
